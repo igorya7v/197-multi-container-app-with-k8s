@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres-deployment
+spec:
+  replicas: 1
+  selector:
+    # Reference to created 
+    # by Docker Pods.
+    # See the container label below.
+    matchLabels:
+      component: postgres
+  template:
+    metadata:
+      labels:
+        component: postgres
+    spec:
+      volumes:
+        - name: postgres-storage
+          persistentVolumeClaim:
+            claimName: database-persistent-volume-claim
+      containers:
+        - name: postgres
+          image: postgres
+          ports:
+            - containerPort: 5432
+          volumeMounts:
+            - name: postgres-storage
+              # data directory which 
+              # will be mounted to the 
+              # persistent volume outside 
+              # of the container
+              mountPath: /var/lib/postgresql/data
+              # specific to postgres
+              # the data will stored in 
+              # that folder in the outside directory.
+              # Otherwise Postgres will refuse to store data.
+              subPath: postgres
+          # Environment variables
+          env:
+            # override the default server password
+            - name: PGPASSWORD
+              valueFrom:
+                # defined in secrets using the kubectl
+                # (kubectl create secret generic pgpassword --from-literal PGPASSWORD=1234)
+                secretKeyRef:
+                  name: pgpassword
+                  key: PGPASSWORD

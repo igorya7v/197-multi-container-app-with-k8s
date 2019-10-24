@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: server-deployment
+spec:
+  replicas: 3
+  selector:
+    # Reference to created 
+    # by Docker Pods.
+    # See the container label below.
+    matchLabels:
+      sample_tag: server
+  template:
+    metadata:
+      labels:
+        sample_tag: server
+    spec:
+      containers:
+        - name: server
+          image: igorya5v/express-server
+          ports:
+            - containerPort: 5000
+          # Environment variables
+          env:
+            - name: REDIS_HOST
+              value: redis-cluster-ip-service
+            - name: REDIS_PORT
+              value: '6379'
+            - name: PGUSER
+              value: postgres
+            - name: PGHOST
+              value: postgres-cluster-ip-service
+            - name: PGPORT
+              value: '5432'
+            - name: PGDATABASE
+              value: postgres
+            - name: PGPASSWORD
+              valueFrom:
+                # defined in secrets using the kubectl
+                # (kubectl create secret generic pgpassword --from-literal PGPASSWORD=1234)
+                secretKeyRef:
+                  name: pgpassword
+                  key: PGPASSWORD
+                                    
